@@ -97,3 +97,19 @@ resilience4j.ratelimiter:
       # Timeout Duration (if 0 -> Instantly throw RequestNotPermittedException)
       timeoutDuration: 1s
 
+resilience4j:
+  bulkhead:
+    instances:
+        semaphore:
+          max-concurrent-calls: 10
+          max-wait-duration: 100ms
+  thread-pool-bulkhead:
+    configs:
+      default:
+        max-thread-pool-size: 2
+        core-thread-pool-size: 2
+        queue-capacity: 2
+        keep-alive-duration: 0
+
+
+

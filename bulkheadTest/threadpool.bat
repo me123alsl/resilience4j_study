@@ -1,0 +1,1 @@
+curl --parallel -parallel-immediate --parallel-max 11 --config urls_threadpool.txt
