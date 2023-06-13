@@ -1,0 +1,99 @@
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+
+spring:
+  application:
+    name: circuit-breaker-example
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  datasource:
+    generate-unique-name: false
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+# 설명: 실패 시, 500ms 인터벌로 3번 재요청
+resilience4j.retry:
+  configs:
+    default:
+      # Retry times
+      maxAttempts: 3
+      # Retry interval
+      waitDuration: 500ms
+      # Retry exceptions
+#      retry-exceptions:
+#        -
+      # Retry ignore exceptions
+#      ignore-exceptions:
+#        -
+
+# 설명: 최근 10건의 처리를 집계하여
+# 실패율이 50%를 이상이면 Open 상태로 전환.
+# * Open 시, 요청에 대한 CallNotPermittedException 발생
+# Open 상태에서 5초후 Half-Open 상태로 전환.
+# Half-Open 상태에서 3건의 처리를 허용하여 집계
+# 3건에 대한 실패율이
+# 50%를 이상이면 Open 상태로 전환.
+# 50%미만이면 Closed 상태로 전환.
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      # Register health indicator (with Spring Actuator)
+      registerHealthIndicator: true
+
+      # Sliding window type (COUNT_BASED or TIME_BASED)
+      slidingWindowType: COUNT_BASED
+      # Sliding window size (calculate failure rate Count of call )
+      slidingWindowSize: 10
+      # Minimum number of calls
+      minimumNumberOfCalls: 5
+      # Failure Rate
+      failureRateThreshold: 50
+
+      # Permitted Call in Half-Open state
+      permittedNumberOfCallsInHalfOpenState: 3
+
+      # Enable Auto change Open to Half-Open (Default : false)
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+      # AutoChange Time (Open -> Half-Open)
+      waitDurationInOpenState: 5s
+      # CircuitBreaker Event Buffer Size
+      eventConsumerBufferSize: 10
+
+# 설명: 처리시간이 2초가 초과되면 TimeoutException 발생.
+# cancelRunningFuture설정에 따라
+# true 면 TimeoutException 발생시 처리중인 Thread를 취소.
+# false 면 TimeoutException 발생시 처리중인 Thread를 취소하지 않음.
+resilience4j.timelimiter:
+  configs:
+    default:
+      # Cancel running future (called by TimeoutException)
+      cancelRunningFuture: true
+      # Timeout duration
+      timeoutDuration: 2s
+  instances:
+    true:
+      baseConfig: default
+    false:
+      baseConfig: default
+      cancelRunningFuture: false
+
+# 설명: 5초동안 3건의 처리를 허용.
+# 5초안에 3건을 초과하면 1초동안 대기.
+# 해당 시간동안에도 3건이 처리중이면 RequestNotPermittedException 발생.
+resilience4j.ratelimiter:
+  configs:
+    default:
+      # Cycle Refresh Time
+      limitRefreshPeriod: 5s
+      # Permit Calls of one Cycle
+      limitForPeriod: 3
+      # Timeout Duration (if 0 -> Instantly throw RequestNotPermittedException)
+      timeoutDuration: 1s
+
