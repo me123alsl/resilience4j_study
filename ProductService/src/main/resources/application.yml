@@ -1,0 +1,28 @@
+server:
+  port: 8082
+  error:
+    include-stacktrace: never
+  shutdown: graceful
+
+spring:
+  application:
+    name: ProductService
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  datasource:
+    generate-unique-name: false
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+resilience4j.retry:
+  configs:
+    default:
+      # Retry times
+      maxAttempts: 3
+      # Retry interval
+      waitDuration: 1s

@@ -1,0 +1,31 @@
+server:
+  port: 8081
+  error:
+    include-stacktrace: never
+  shutdown: graceful
+
+spring:
+  application:
+    name: OrderService
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  datasource:
+    generate-unique-name: false
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 5
+      minimumNumberOfCalls: 3
+      failureRateThreshold: 50
+      permittedNumberOfCallsInHalfOpenState: 3
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+      waitDurationInOpenState: 5s
