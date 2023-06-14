@@ -20,6 +20,7 @@ spring:
         format_sql: true
 
 resilience4j.circuitbreaker:
+  circuit-breaker-aspect-order: 1
   configs:
     default:
       slidingWindowType: COUNT_BASED
@@ -29,3 +30,10 @@ resilience4j.circuitbreaker:
       permittedNumberOfCallsInHalfOpenState: 3
       automaticTransitionFromOpenToHalfOpenEnabled: true
       waitDurationInOpenState: 5s
+
+resilience4j.retry:
+  retry-aspect-order: 2
+  instances:
+    getOrder:
+      maxAttempts: 3
+      waitDuration: 1s

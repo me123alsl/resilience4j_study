@@ -25,4 +25,4 @@ resilience4j.retry:
       # Retry times
       maxAttempts: 3
       # Retry interval
-      waitDuration: 1s
+      waitDuration: 100s

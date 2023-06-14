@@ -2,14 +2,14 @@ package com.example.orderservice.service;
 
 import com.example.orderservice.controller.CommonResponse;
 import com.example.orderservice.controller.CreateOrderDto;
+import com.example.orderservice.entity.Order;
+import com.example.orderservice.entity.Product;
 import com.example.orderservice.exception.NotFoundOrderException;
 import com.example.orderservice.exception.NotFoundProductException;
 import com.example.orderservice.repository.OrderRepository;
-import com.example.orderservice.entity.Product;
-import com.example.orderservice.entity.Order;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import java.util.List;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -29,11 +29,13 @@ public class OrderService {
   @CircuitBreaker(name = "createProduct", fallbackMethod = "createOrderFallback")
   public CommonResponse<?> createOrder(CreateOrderDto createOrderDto) {
     log.info("OrderService - createOrder: order={}", createOrderDto);
+    // Product 서비스에 상품조회
     Product product = restTemplate.getForObject(
-        PRODUCT_SERVICE_URL + createOrderDto.getProductId(), Product.class);
-    if (product == null) {
-      throw new NotFoundProductException(createOrderDto.getProductId());
-    }
+        PRODUCT_SERVICE_URL + createOrderDto.getProductId(),
+        Product.class);
+    // 없으면 예외 발생
+    if (product == null) throw new NotFoundProductException(createOrderDto.getProductId());
+    // 주문 생성
     Order order = Order.builder()
         .productId(product.getId())
         .quantity(createOrderDto.getQuantity())
@@ -42,15 +44,23 @@ public class OrderService {
     return new CommonResponse<>(200, "success",  orderRepository.save(order));
   }
 
-  public Order getOrder(Long id) {
+  @Retry(name = "getOrder", fallbackMethod = "getOrderFallback")
+  public CommonResponse getOrder(Long id) {
     log.info("OrderService - getOrder: id={}", id);
-    return orderRepository.findById(id)
-        .orElseThrow(() -> new NotFoundOrderException(id));
+    return
+        new CommonResponse<>(200, "success", orderRepository.findById(id)
+        .orElseThrow(() -> new NotFoundOrderException(id))
+        );
   }
 
-  public List<Order> getAllOrders() {
+  private CommonResponse getOrderFallback(Long id, NotFoundOrderException e) {
+    log.info("OrderService - getOrderFallback: id={}", id);
+    return new CommonResponse( 400, "주문을 찾을 수 없습니다.", e.getClass());
+  }
+
+  public CommonResponse<?> getAllOrders() {
     log.info("OrderService - getAllOrders");
-    return orderRepository.findAll();
+    return new CommonResponse<>(200, "success", orderRepository.findAll());
   }
 
   private CommonResponse<?> createOrderFallback(CreateOrderDto createOrderDto, NotFoundProductException e) {
