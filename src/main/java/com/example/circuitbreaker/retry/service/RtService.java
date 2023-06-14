@@ -1,6 +1,7 @@
 package com.example.circuitbreaker.retry.service;
 
 import com.example.circuitbreaker.response.CommonResponse;
+import com.example.circuitbreaker.retry.exception.CustomException;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,12 +20,12 @@ public class RtService {
     localCount++;
     log.info("Call Count : {}, localCount : {}", count, localCount);
     if (isFail && validCount < exceptionCount ) {
-      throw new RuntimeException("Error : " + count + ", localCount : " + localCount);
+      throw new CustomException("Error : " + count + ", localCount : " + localCount);
     }
     return new CommonResponse(true,  "Success", "Success");
   }
 
-  public CommonResponse retryFallback(boolean isFail, int exceptionCount, RuntimeException e) {
+  public CommonResponse retryFallback(boolean isFail, int exceptionCount, CustomException e) {
     log.info("Fallback Call Count is : {}", count);
     count = 0;
     return new CommonResponse(false, e.getMessage(), e.getClass());

@@ -2,6 +2,7 @@ server:
   port: 8080
   error:
     include-stacktrace: never
+  shutdown: graceful
 
 spring:
   application:
@@ -73,6 +74,7 @@ resilience4j.circuitbreaker:
 resilience4j.timelimiter:
   configs:
     default:
+      registerHealthIndicator: true
       # Cancel running future (called by TimeoutException)
       cancelRunningFuture: true
       # Timeout duration
@@ -90,6 +92,7 @@ resilience4j.timelimiter:
 resilience4j.ratelimiter:
   configs:
     default:
+      registerHealthIndicator: true
       # Cycle Refresh Time
       limitRefreshPeriod: 5s
       # Permit Calls of one Cycle
@@ -101,15 +104,36 @@ resilience4j:
   bulkhead:
     instances:
         semaphore:
+          registerHealthIndicator: true
           max-concurrent-calls: 10
           max-wait-duration: 100ms
   thread-pool-bulkhead:
     configs:
       default:
+        registerHealthIndicator: true
         max-thread-pool-size: 2
         core-thread-pool-size: 2
         queue-capacity: 2
         keep-alive-duration: 0
 
-
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+    timelimiters:
+      enabled: true
+    retry:
+      enabled: true
+    bulkheads:
+      enabled: true
